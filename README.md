@@ -7,7 +7,24 @@ File Manager replaces, and `.deb` packages in Canonical's App Center (the
 `snap-store` snap). Nothing opened Flatpak files: double-clicking a
 downloaded `.flatpak` bundle showed GNOME's "No Apps Available" (the
 user's report, 2026-10-26). `patrone-default-apps` 0.1.3 makes Unpack the
-app for all of them.
+app for all of them on PatroneOS; installed on its own, on Ubuntu, it's
+one more app to open them with, and Ubuntu's defaults stay.
+## Installing
+
+- **PatroneOS** has it already.
+- **Ubuntu 26.04 and systems built on it:** from Patrone's apt
+  repository, which keeps it up to date
+  ([billsecond/patrone-apt](https://github.com/billsecond/patrone-apt),
+  "Patrone's apps on Ubuntu"), then `sudo apt install patrone-unpack`. Or
+  download the `.deb` from the
+  [latest release](https://github.com/billsecond/patrone-unpack/releases/latest)
+  and open it.
+
+Its history up to here is from PatroneOS's repository,
+[billsecond/patroneos](https://github.com/billsecond/patroneos), where it
+lived in its own folder; pull request numbers in those commits are that
+repository's.
+
 
 ```
 patrone-unpack [FILE...]               open each file in a window
@@ -160,7 +177,8 @@ PATRONE_UNPACK_HELPER=$PWD/data/install-deb target/release/patrone-unpack some.d
 
 `PATRONE_UNPACK_HELPER` points Install at the helper in this folder, for
 running uninstalled; pkexec then asks with polkit's generic message, since
-the policy isn't installed. The package: `./packaging/build.sh patrone-unpack -d`.
+the policy isn't installed. The package: `tools/build-deb.sh` (`-d` to skip the Build-Depends
+check, with Rust from rustup), into `out/`.
 
 The tests (run by the package build too) make real archives with
 libarchive's writer, so they need no other tools: zip, 7z and tar with each
@@ -224,3 +242,12 @@ installed on the dev VM, so the button works there; on a system without it
 the button fails ("Failed to start App Center"). With Unpack as the default
 for archives, packages and Flatpak files, those no longer reach that
 dialog.
+
+## Releases
+
+A tag `vVERSION`, where VERSION is `debian/changelog`'s, makes a GitHub
+release (`.github/workflows/release.yml`): the `.deb`, built in a clean
+Ubuntu 26.04 container, the source tarball (`git archive` of the tag) and
+`SHA256SUMS`. PatroneOS builds its own package from that tarball: its
+repository pins the release in `packaging/patrone-unpack/release.txt`, and moving
+the pin on its `main` publishes it to Patrone's apt repository.

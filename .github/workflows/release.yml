@@ -1,0 +1,45 @@
+# A tag vVERSION, VERSION being debian/changelog's, makes a release: the
+# .deb, the source tarball and SHA256SUMS. PatroneOS's repository pins the
+# tarball (packaging/PACKAGE/release.txt) and builds its own package from it.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: deb
+          path: dist
+      - name: The tag is the package's version
+        run: |
+          version=$(sed -n '1s/^[^ ]* (\([^)]*\)).*/\1/p' debian/changelog)
+          package=$(sed -n '1s/^\([^ ]*\) .*/\1/p' debian/changelog)
+          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+              echo "Tag $GITHUB_REF_NAME, but debian/changelog says $version" >&2
+              exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_ENV"
+          echo "package=$package" >> "$GITHUB_ENV"
+      - name: Source tarball and checksums
+        run: |
+          git archive --prefix="$package-$version/" -o "dist/$package-$version.tar.gz" "$GITHUB_REF_NAME"
+          (cd dist && sha256sum -- * > SHA256SUMS && cat SHA256SUMS)
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes=$(sed -n '3,/^ -- /p' debian/changelog | sed '$d')
+          gh release create "$GITHUB_REF_NAME" --title "$package $version" --notes "$notes" dist/*

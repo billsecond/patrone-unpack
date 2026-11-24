@@ -1,5 +1,5 @@
 #!/usr/bin/make -f
-# The source tree arrives with its crates vendored (packaging/build.sh), so
+# The source tree arrives with its crates vendored (tools/build-deb.sh), so
 # cargo never touches the network.
 
 export CARGO_HOME = $(CURDIR)/debian/cargo-home

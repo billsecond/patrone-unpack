@@ -1,0 +1,49 @@
+# Builds the .deb in a clean Ubuntu 26.04, installs it and removes it again.
+# release.yml calls this for a tag, and keeps what it built.
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+jobs:
+  deb:
+    runs-on: ubuntu-latest
+    container: ubuntu:26.04
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - name: Tools
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates curl git \
+              build-essential devscripts equivs
+      - uses: actions/checkout@v4
+      - name: Build dependencies
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          # In /tmp, so its own files stay out of the build
+          cd /tmp && mk-build-deps -i -r -t 'apt-get -y --no-install-recommends' "$GITHUB_WORKSPACE/debian/control"
+      - name: Build
+        run: tools/build-deb.sh
+      - name: Install and remove it
+        run: |
+          # Patrone's apt repository, for dependencies that are Patrone's
+          # (fonts-patroneos and the like)
+          curl -fsSL https://billsecond.github.io/patrone-apt/patrone-archive-keyring.gpg \
+              -o /usr/share/keyrings/patrone-archive-keyring.gpg
+          printf '%s\n' 'Types: deb' 'URIs: https://billsecond.github.io/patrone-apt' \
+              'Suites: resolute' 'Components: main' 'Architectures: amd64' \
+              'Signed-By: /usr/share/keyrings/patrone-archive-keyring.gpg' \
+              > /etc/apt/sources.list.d/patrone.sources
+          apt-get update
+          apt-get install -y --no-install-recommends ./out/*.deb
+          package=$(dpkg-parsechangelog -S Source)
+          dpkg -L "$package"
+          apt-get purge -y "$package"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deb
+          path: out/*.deb

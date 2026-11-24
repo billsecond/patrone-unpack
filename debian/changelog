@@ -1,3 +1,11 @@
+patrone-unpack (0.1.3) resolute; urgency=medium
+
+  * Built from its own repository, billsecond/patrone-unpack,
+    where its releases are made; the package's Homepage and Vcs fields
+    point there. Nothing else changes.
+
+ -- William Daugherty <31995458+billsecond@users.noreply.github.com>  Tue, 24 Nov 2026 09:00:00 -0600
+
 patrone-unpack (0.1.2) resolute; urgency=medium
 
   * The system's new name, PatroneOS (2026-10-29), in its password prompt.

@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: patrone-unpack
-Source: https://github.com/billsecond/patroneos
+Source: https://github.com/billsecond/patrone-unpack
 
 Files: *
 Copyright: 2026 William Daugherty
@@ -9,7 +9,7 @@ License: GPL-3+
 Files: vendor/*
 Copyright: The authors of each crate
 License: various
- The Rust crates in vendor/, which packaging/build.sh adds, are compiled
+ The Rust crates in vendor/, which tools/build-deb.sh adds, are compiled
  into the program. Most are MIT or Apache-2.0. Each crate's licence and
  copyright notices are in
  /usr/share/doc/patrone-unpack/third-party-licenses.txt.gz.
