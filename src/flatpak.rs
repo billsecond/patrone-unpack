@@ -7,7 +7,6 @@
 
 use std::io::Read;
 use std::path::Path;
-use std::process::Command;
 
 use gtk::prelude::*;
 use gtk::{gio, glib};
@@ -447,7 +446,7 @@ pub fn available() -> bool {
 
 /// Whether the app (or runtime) is installed, for this account or everyone.
 pub fn installed(id: &str) -> bool {
-    Command::new("flatpak")
+    util::host_command("flatpak", &[])
         .args(["info", id])
         .output()
         .is_ok_and(|output| output.status.success())

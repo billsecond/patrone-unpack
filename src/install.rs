@@ -306,7 +306,11 @@ fn load(this: Rc<Window>) {
                     .set_visible(!this.description.text().is_empty());
                 *this.details.borrow_mut() = Some(details);
                 if this.kind == Kind::Deb {
-                    check_changes(this);
+                    if util::sandboxed() {
+                        deb_needs_package(&this);
+                    } else {
+                        check_changes(this);
+                    }
                 }
             }
             Err(message) => {
@@ -318,6 +322,17 @@ fn load(this: Rc<Window>) {
             }
         }
     });
+}
+
+/// The Flatpak can't install a .deb package: that takes the root helper
+/// only Unpack's own package installs.
+fn deb_needs_package(this: &Window) {
+    this.install.set_sensitive(false);
+    this.status.set_text(
+        "This copy of Unpack is a Flatpak, which can't install .deb packages. \
+         Patrone Unpack's own package (patrone-unpack) can, on Ubuntu and systems \
+         built on it; or install it with your system's software app.",
+    );
 }
 
 fn add_fact(this: &Window, name: &str, value: &str) {
@@ -773,6 +788,7 @@ fn failure(kind: Kind, code: i32) -> String {
 /// Runs one command and returns its exit status (-1 if it didn't start).
 async fn run_one(this: &Rc<Window>, command: &[String]) -> i32 {
     append_log(this, &format!("$ {}", command.join(" ")));
+    let command = util::host_argv(command.to_vec());
     let arguments: Vec<&std::ffi::OsStr> = command.iter().map(std::ffi::OsStr::new).collect();
     let process = match gio::Subprocess::newv(
         &arguments,
@@ -914,7 +930,7 @@ fn launch(this: &Window) {
             }
         }
         Some(Details::Flatpak(info, _)) => {
-            let _ = std::process::Command::new("flatpak")
+            let _ = util::host_command("flatpak", &[])
                 .args(["run", &info.id])
                 .spawn();
         }

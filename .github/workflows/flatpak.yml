@@ -1,0 +1,33 @@
+# Builds the Flatpak (tools/build-flatpak.sh), installs it, and runs it in
+# its sandbox (tools/test-flatpak.sh). release.yml calls this for a tag, and keeps what it built.
+name: Flatpak
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+jobs:
+  flatpak:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends flatpak flatpak-builder dbus-x11 \
+              libarchive-tools  # bsdunzip, which flatpak-builder unpacks zips with
+      - name: Build
+        run: tools/build-flatpak.sh
+      - name: Install and run it
+        run: |
+          flatpak install --user -y --noninteractive out/*-linux-x86_64.flatpak
+          flatpak info --user "$(sed -n 's/^id: //p' flatpak/*.yml)"
+          tools/test-flatpak.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: flatpak
+          path: |
+            out/*-linux-x86_64.flatpak
+            out/*-linux-x86_64.tar.gz

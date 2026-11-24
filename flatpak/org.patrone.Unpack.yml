@@ -1,0 +1,47 @@
+# Patrone Unpack's Flatpak. tools/build-flatpak.sh builds it: it puts the
+# source (with its crates vendored, so the build runs offline) in src/
+# beside a copy of this file.
+#
+# The Flatpak opens and extracts archives with the runtime's libarchive,
+# and runs the computer's own flatpak to install Flatpak files (through
+# flatpak-spawn --host, so it needs org.freedesktop.Flatpak). It doesn't
+# install .deb packages: that takes the root helper and polkit action only
+# Unpack's own package (patrone-unpack) installs.
+id: org.patrone.Unpack
+runtime: org.gnome.Platform
+runtime-version: '50'
+sdk: org.gnome.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+command: patrone-unpack
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  # Extract Here puts files beside the archive, so the folders archives are
+  # in: the home folder and removable drives
+  - --filesystem=home
+  - --filesystem=/media
+  - --filesystem=/run/media
+  # The computer's flatpak, dpkg and apt-get (flatpak-spawn --host)
+  - --talk-name=org.freedesktop.Flatpak
+build-options:
+  append-path: /usr/lib/sdk/rust-stable/bin
+modules:
+  - name: patrone-unpack
+    buildsystem: simple
+    build-options:
+      env:
+        CARGO_HOME: /run/build/patrone-unpack/cargo
+    build-commands:
+      - cargo build --release --frozen
+      - install -Dm755 target/release/patrone-unpack /app/bin/patrone-unpack
+      - install -Dm644 -t /app/share/applications data/org.patrone.Unpack.desktop
+      - install -Dm644 -t /app/share/icons/hicolor/scalable/apps data/org.patrone.Unpack.svg
+      - install -Dm644 -t /app/share/metainfo data/org.patrone.Unpack.metainfo.xml
+      - gzip -9n < third-party-licenses.txt > third-party-licenses.txt.gz
+      - install -Dm644 -t /app/share/doc/patrone-unpack LICENSE third-party-licenses.txt.gz
+    sources:
+      - type: dir
+        path: src
