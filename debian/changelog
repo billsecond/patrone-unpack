@@ -1,3 +1,15 @@
+patrone-unpack (0.1.4) resolute; urgency=medium
+
+  * A Flatpak too, for any Linux (flatpak/org.patrone.Unpack.yml,
+    tools/build-flatpak.sh); each release has the bundle, and Patrone's
+    app index lists it. In the Flatpak, the programs it runs for packages
+    are the computer's (flatpak-spawn --host), and it says a .deb package
+    needs its own package to install, in place of an Install button.
+  * An AppStream listing (org.patrone.Unpack.metainfo.xml), for GNOME
+    Software and the app index.
+
+ -- William Daugherty <31995458+billsecond@users.noreply.github.com>  Tue, 24 Nov 2026 09:00:00 -0600
+
 patrone-unpack (0.1.3) resolute; urgency=medium
 
   * Built from its own repository, billsecond/patrone-unpack,

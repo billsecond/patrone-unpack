@@ -19,6 +19,20 @@ one more app to open them with, and Ubuntu's defaults stay.
   download the `.deb` from the
   [latest release](https://github.com/billsecond/patrone-unpack/releases/latest)
   and open it.
+- **Any Linux, as a Flatpak**, kept up to date: from Patrone's app index,
+  which lists it (with Flathub, for the GNOME runtime it runs on):
+
+  ```
+  flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+  flatpak remote-add --if-not-exists patrone-app-index https://billsecond.github.io/patrone-app-index/patrone-app-index.flatpakrepo
+  flatpak install patrone-app-index org.patrone.Unpack
+  ```
+
+  Or download the `.flatpak` from the latest release and
+  `flatpak install --user` it (no updates then). The Flatpak opens and
+  extracts archives in your home folder and on removable drives, and
+  installs Flatpak files with the computer's own flatpak; it doesn't
+  install `.deb` packages, which take the package's root helper.
 
 Its history up to here is from PatroneOS's repository,
 [billsecond/patroneos](https://github.com/billsecond/patroneos), where it
@@ -243,11 +257,23 @@ the button fails ("Failed to start App Center"). With Unpack as the default
 for archives, packages and Flatpak files, those no longer reach that
 dialog.
 
+## Flatpak
+
+`tools/build-flatpak.sh` builds `flatpak/org.patrone.Unpack.yml` on the
+GNOME 50 runtime (its libarchive), with the crates vendored, into `out/`:
+the bundle (`patrone-unpack-VERSION-linux-x86_64.flatpak`) and a tarball
+of the same app's files, which Patrone's app index has Flatpak download.
+In the Flatpak, the programs Unpack runs for packages (flatpak, dpkg,
+apt-get) are the computer's, through `flatpak-spawn --host`
+(`util::host_command`), and a `.deb` package's window says the package can
+install it in place of an Install button. `.github/workflows/flatpak.yml`
+builds it, installs it and runs it (`tools/test-flatpak.sh`).
+
 ## Releases
 
 A tag `vVERSION`, where VERSION is `debian/changelog`'s, makes a GitHub
 release (`.github/workflows/release.yml`): the `.deb`, built in a clean
-Ubuntu 26.04 container, the source tarball (`git archive` of the tag) and
-`SHA256SUMS`. PatroneOS builds its own package from that tarball: its
+Ubuntu 26.04 container, the source tarball (`git archive` of the tag), the
+Flatpak bundle and its tarball, and `SHA256SUMS`. PatroneOS builds its own package from that tarball: its
 repository pins the release in `packaging/patrone-unpack/release.txt`, and moving
 the pin on its `main` publishes it to Patrone's apt repository.

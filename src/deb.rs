@@ -3,7 +3,6 @@
 //! which needs no administrator).
 
 use std::path::Path;
-use std::process::Command;
 
 use crate::util;
 
@@ -120,7 +119,7 @@ pub fn installed(deb: &Deb) -> Installed {
         return Installed::No;
     };
     let compare = |relation: &str| {
-        Command::new("dpkg")
+        util::host_command("dpkg", &[])
             .args(["--compare-versions", &version, relation, &deb.version])
             .status()
             .is_ok_and(|status| status.success())
@@ -147,10 +146,9 @@ pub struct Changes {
 
 /// Asks apt what installing the package would do, without doing it.
 pub fn simulate(path: &Path, package: &str) -> Result<Changes, String> {
-    let output = Command::new("apt-get")
+    let output = util::host_command("apt-get", &[("LC_ALL", "C.UTF-8")])
         .args(["--simulate", "--quiet", "install"])
         .arg(path)
-        .env("LC_ALL", "C.UTF-8")
         .output()
         .map_err(|error| format!("apt-get couldn't run: {error}"))?;
     let stdout = String::from_utf8_lossy(&output.stdout);

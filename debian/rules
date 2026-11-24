@@ -20,6 +20,7 @@ override_dh_auto_install:
 	install -Dm755 target/release/patrone-unpack $(pkg)/usr/bin/patrone-unpack
 	install -Dm644 data/org.patrone.Unpack.desktop $(pkg)/usr/share/applications/org.patrone.Unpack.desktop
 	install -Dm644 data/org.patrone.Unpack.svg $(pkg)/usr/share/icons/hicolor/scalable/apps/org.patrone.Unpack.svg
+	install -Dm644 data/org.patrone.Unpack.metainfo.xml $(pkg)/usr/share/metainfo/org.patrone.Unpack.metainfo.xml
 	# Installs a .deb with apt, as root through pkexec, under its own polkit
 	# action (an administrator's password every time)
 	install -Dm755 data/install-deb $(pkg)/usr/libexec/patrone-unpack/install-deb

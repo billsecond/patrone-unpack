@@ -1,5 +1,6 @@
 # A tag vVERSION, VERSION being debian/changelog's, makes a release: the
-# .deb, the source tarball and SHA256SUMS. PatroneOS's repository pins the
+# .deb, the source tarball, the Flatpak bundle and the tarball of its files
+# (which Patrone's app index installs), and SHA256SUMS. PatroneOS's repository pins the
 # tarball (packaging/PACKAGE/release.txt) and builds its own package from it.
 name: Release
 
@@ -14,14 +15,21 @@ jobs:
   build:
     uses: ./.github/workflows/build.yml
 
+  flatpak:
+    uses: ./.github/workflows/flatpak.yml
+
   release:
-    needs: build
+    needs: [build, flatpak]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: deb
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: flatpak
           path: dist
       - name: The tag is the package's version
         run: |

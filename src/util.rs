@@ -71,11 +71,50 @@ pub fn typed_path(text: &str) -> PathBuf {
     }
 }
 
+/// Whether Unpack runs as a Flatpak (from Patrone's app index). Then the
+/// programs it runs for packages (flatpak, dpkg, dpkg-deb, dpkg-query,
+/// apt-get) are the computer's own, through `flatpak-spawn --host`, and it
+/// doesn't install .deb packages: that takes the root helper only its own
+/// package (patrone-unpack) installs.
+pub fn sandboxed() -> bool {
+    static SANDBOXED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *SANDBOXED.get_or_init(|| Path::new("/.flatpak-info").exists())
+}
+
+/// One of the computer's programs, with these environment variables: the
+/// program itself, or in the Flatpak, `flatpak-spawn --host` running it.
+pub fn host_command(program: &str, env: &[(&str, &str)]) -> Command {
+    if sandboxed() {
+        let mut command = Command::new("flatpak-spawn");
+        command.arg("--host");
+        for (key, value) in env {
+            command.arg(format!("--env={key}={value}"));
+        }
+        command.arg(program);
+        command
+    } else {
+        let mut command = Command::new(program);
+        command.envs(env.iter().copied());
+        command
+    }
+}
+
+/// A command line for gio::Subprocess, the same way as host_command.
+pub fn host_argv(command: Vec<String>) -> Vec<String> {
+    if sandboxed() {
+        ["flatpak-spawn".to_string(), "--host".to_string()]
+            .into_iter()
+            .chain(command)
+            .collect()
+    } else {
+        command
+    }
+}
+
 /// Runs a program and returns what it printed, if it succeeded.
 pub fn output(program: &str, arguments: &[&str]) -> Option<String> {
-    let output = Command::new(program)
+    let output = host_command(program, &[("LC_ALL", "C.UTF-8")])
         .args(arguments)
-        .env("LC_ALL", "C.UTF-8")
         .output()
         .ok()?;
     output
@@ -106,9 +145,16 @@ pub fn temporary_folder() -> Option<PathBuf> {
     })
 }
 
-/// Whether a program can be found on PATH.
+/// Whether a program can be found on PATH (the computer's, in the Flatpak).
 pub fn have(program: &str) -> bool {
-    glib::find_program_in_path(program).is_some()
+    if sandboxed() {
+        host_command("sh", &[])
+            .args(["-c", "command -v \"$0\" > /dev/null", program])
+            .status()
+            .is_ok_and(|status| status.success())
+    } else {
+        glib::find_program_in_path(program).is_some()
+    }
 }
 
 #[cfg(test)]
