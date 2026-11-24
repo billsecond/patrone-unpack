@@ -17,7 +17,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends flatpak flatpak-builder dbus-x11 \
-              libarchive-tools elfutils  # bsdunzip for zips, eu-strip
+              libarchive-tools elfutils xvfb  # bsdunzip for zips, eu-strip, a display
       - name: Build
         run: tools/build-flatpak.sh
       - name: Install and run it
